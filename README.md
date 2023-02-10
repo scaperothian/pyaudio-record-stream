@@ -3,7 +3,7 @@
 
 Inspired by https://github.com/LearnedVector/A-Hackers-AI-Voice-Assistant/
   
-<img width="497" alt="Screenshot 2023-02-09 at 11 11 02 PM" src="https://user-images.githubusercontent.com/4464787/217998813-548bd016-5fd0-41b2-b68c-04b853a55467.png">
+<img width="983" alt="Screenshot 2023-02-09 at 11 37 31 PM" src="https://user-images.githubusercontent.com/4464787/218001961-f74952c1-bde6-4496-a69f-8ec83b806986.png">
 
 Save to a file.  Convention is test#.wav. Where # is the number given to the audio queue.  The numbers are ordered, so reassembly of the queues would result in time ordered samples.
 
