@@ -37,11 +37,11 @@ class Listener:
 
 class SpeechRecognitionEngine:
 
-    def __init__(self, sr, file_location):
+    def __init__(self, sr, filepath):
         self.listener = Listener(sample_rate=sr)
         self.audio_q = list()
         self.sr = sr
-        self.file_location = file_location
+        self.filepath = file_location
 
     def run(self):
         self.listener.run(self.audio_q)
@@ -73,7 +73,7 @@ class SpeechRecognitionEngine:
                 pred_q = self.audio_q.copy()
                 self.audio_q.clear()
                 print('Predicting Text.')
-                self.save(pred_q, f'{self.file_location}/test{str(i)}.wav')
+                self.save(pred_q, f'{self.filepath}/test{str(i)}.wav')
                 i += 1
 
             # time.sleep(0.05)
@@ -82,7 +82,7 @@ class SpeechRecognitionEngine:
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Testing running pyaudio to support streaming audio from laptop.")
-    parser.add_argument('--file_location', '-f', type=str, default=None, required=True,
+    parser.add_argument('--filepath', '-p', type=str, default=None, required=True,
                         help='file location where we will save samples  file names are test<#>.wav where # \
                               is the number in a sequence of saved chunks from the sound card.')
     args = parser.parse_args()
@@ -96,24 +96,24 @@ if __name__ == '__main__':
     #   remove them.
     #   iterate through and find all the files
     files = []
-    lst = os.listdir(args.file_location)
+    lst = os.listdir(args.filepath)
     for filename in lst:
         if "test" in filename and 'wav' in filename:
             files.append(filename)
     files.sort()
     if len(files) > 0:
-        rsp = input(f'The following files were found in {args.file_location}: {files}.  Would you like to remove them? [Y/n] ')
+        rsp = input(f'The following files were found in {args.filepath}: {files}.  Would you like to remove them? [Y/n] ')
         if rsp.lower() == '' or rsp.lower() == 'y':
             for file in files:
                 print(f'Removing {file}.')
-                os.remove(f'{args.file_location}/{file}')
+                os.remove(f'{args.filepath}/{file}')
         else:
             print('Leaving program.  Remove files to run to completion.')
             exit()
 
 
     try:
-        asr_engine = SpeechRecognitionEngine(sample_rate, args.file_location)
+        asr_engine = SpeechRecognitionEngine(sample_rate, args.filepath)
         print(f'Prediction Window is {1024 * 15 / sample_rate}s.')
         asr_engine.run()
         threading.Event().wait()

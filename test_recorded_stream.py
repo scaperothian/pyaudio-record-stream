@@ -21,7 +21,7 @@ def save(self, waveforms, fname="temp.wav"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Testing running pyaudio to support streaming audio from laptop.")
-    parser.add_argument('--file_location', '-f', type=str, default=None, required=True,
+    parser.add_argument('--filepath', '-p', type=str, default=None, required=True,
                         help='file location where we will save samples  file names are test<#>.wav where # \
                               is the number in a sequence of saved chunks from the sound card.')
     args = parser.parse_args()
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     # iterate through and find all the files
     files = []
-    lst = os.listdir(args.file_location)
+    lst = os.listdir(args.filepath)
     for filename in lst:
         if "test" in filename and 'wav' in filename:
             files.append(filename)
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # read files into memory
     b = []
     for file in files:
-        wf = wave.open(f'{args.file_location}/{file}')
+        wf = wave.open(f'{args.filepath}/{file}')
         while True:
             # bits - type bytes / binary string
             bits = wf.readframes(1024)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
                 print(f'Read all bytes from {file}')
                 break
 
-    wf = wave.open(f'{args.file_location}/big.wav', "wb")
+    wf = wave.open(f'{args.filepath}/big.wav', "wb")
     # set the channels
     wf.setnchannels(1)
     # set the sample format
