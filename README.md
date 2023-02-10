@@ -9,11 +9,11 @@ Save to a file.  Convention is test#.wav. Where # is the number given to the aud
 
 
 ```
-python record_stream.py -f <filepath>
+python record_stream.py -p <filepath>
 ```
 
 ```
-python test_recorded_stream.py -f <filepath>
+python test_recorded_stream.py -p <filepath>
 ```
 
 ## Requirements
