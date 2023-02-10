@@ -3,7 +3,6 @@ import argparse
 import wave
 import pyaudio
 import os
-import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Testing running pyaudio to support streaming audio from laptop.")
