@@ -3,21 +3,7 @@ import argparse
 import wave
 import pyaudio
 import os
-
-
-def save(self, waveforms, fname="temp.wav"):
-    wf = wave.open(fname, "wb")
-    # set the channels
-    wf.setnchannels(1)
-    # set the sample format
-    wf.setsampwidth(self.listener.p.get_sample_size(pyaudio.paInt16))
-    # set the sample rate
-    wf.setframerate(self.sr)
-    # write the frames as bytes
-    wf.writeframes(b"".join(waveforms))
-    # close the file
-    wf.close()
-
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Testing running pyaudio to support streaming audio from laptop.")
@@ -26,7 +12,13 @@ if __name__ == "__main__":
                               is the number in a sequence of saved chunks from the sound card.')
     args = parser.parse_args()
     p = pyaudio.PyAudio()
-    sr = 8000
+
+    datatype = pyaudio.paInt16
+    SAMPLE_RATE = 8000
+    CHUNK_SIZE = 1024
+    QUEUE_DEPTH = 15
+    window_size = CHUNK_SIZE*QUEUE_DEPTH/SAMPLE_RATE
+    print(f'Sample from audio card and save off data every {window_size}s')
 
     # iterate through and find all the files
     files = []
@@ -42,7 +34,7 @@ if __name__ == "__main__":
         wf = wave.open(f'{args.filepath}/{file}')
         while True:
             # bits - type bytes / binary string
-            bits = wf.readframes(1024)
+            bits = wf.readframes(CHUNK_SIZE)
             # when
             b.extend(bits)
 
@@ -54,13 +46,14 @@ if __name__ == "__main__":
     # set the channels
     wf.setnchannels(1)
     # set the sample format
-    wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
+    wf.setsampwidth(p.get_sample_size(datatype))
     # set the sample rate
-    wf.setframerate(sr)
+    wf.setframerate(SAMPLE_RATE)
     # write the frames as bytes
 
     wf.writeframes(bytes(b))
     # close the file
     wf.close()
 
-    # concatenate them together
+    # now print in matplotlib...
+    # plt.plot(b)

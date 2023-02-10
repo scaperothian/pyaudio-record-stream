@@ -7,25 +7,30 @@ import wave
 import argparse
 import os
 
-class Listener:
 
-    def __init__(self, sample_rate=8000, record_seconds=2):
-        self.chunk = 1024
-        self.sample_rate = sample_rate
-        self.record_seconds = record_seconds
+class Listener:
+    '''
+    sr - sample rate - typ. 8000
+    chunk - number of samples (chunks) provided directly from audio card. - typ. 1024
+    dt - data type of samples - typ. pyaudio.paInt8 (audio cards tend to be 8-bit)
+    nchan - number of channels of audio to recordd. - typ. 1
+    '''
+    def __init__(self, sr, dt, chunk, nchan):
+        self.chunk_size = chunk
+        self.sample_rate = sr
+        self.sample_datatype = dt
+        self.nchannels = nchan
         self.p = pyaudio.PyAudio()
-        self.stream = self.p.open(format=pyaudio.paInt8,
-                        channels=1,
-                        rate=self.sample_rate,
-                        input=True,
-                        output=True,
-                        frames_per_buffer=self.chunk)
+        self.stream = self.p.open(format=self.sample_datatype,
+                                  channels=self.nchannels,
+                                  rate=self.sample_rate,
+                                  input=True,
+                                  output=True,
+                                  frames_per_buffer=self.chunk_size)
 
     def listen(self, queue):
         while True:
-            data = self.stream.read(self.chunk , exception_on_overflow=False)
-            import pdb
-            pdb.set_trace()
+            data = self.stream.read(self.chunk_size, exception_on_overflow=False)
             queue.append(data)
             time.sleep(0.01)
 
@@ -36,27 +41,33 @@ class Listener:
 
 
 class SpeechRecognitionEngine:
-
-    def __init__(self, sr, filepath):
-        self.listener = Listener(sample_rate=sr)
+    '''
+    sr - sample rate - typ. 8000
+    chunk - number of samples (chunks) provided directly from audio card. - typ. 1024
+    dt - data type of samples - typ. pyaudio.paInt8 (audio cards tend to be 8-bit)
+    nchan - number of channels of audio to recordd. - typ. 1
+    '''
+    def __init__(self, sr, dt, chunk, nchan, filepath):
+        self.listener = Listener(sr=sr, dt=dt, chunk=chunk, nchan=nchan)
         self.audio_q = list()
-        self.sr = sr
-        self.filepath = file_location
+        self.sample_rate = sr
+        self.sample_data_type = dt
+        self.nchannels = nchan
+        self.filepath = filepath
 
-    def run(self):
+    def run(self, qdepth):
         self.listener.run(self.audio_q)
-        thread = threading.Thread(target=self.inference_loop, daemon=True)
+        thread = threading.Thread(target=self.inference_loop, args=(qdepth,), daemon=True)
         thread.start()
 
     def save(self, waveforms, fname="temp.wav"):
-
         wf = wave.open(fname, "wb")
         # set the channels
-        wf.setnchannels(1)
+        wf.setnchannels(self.nchannels)
         # set the sample format
-        wf.setsampwidth(self.listener.p.get_sample_size(pyaudio.paInt8))
+        wf.setsampwidth(self.listener.p.get_sample_size(self.sample_data_type))
         # set the sample rate
-        wf.setframerate(self.sr)
+        wf.setframerate(self.sample_rate)
         # write the frames as bytes
         wf.writeframes(b"".join(waveforms))
         # close the file
@@ -64,31 +75,34 @@ class SpeechRecognitionEngine:
 
         return fname
 
-    def inference_loop(self):
+    def inference_loop(self, qdepth):
         i = 0
         while True:
-            if len(self.audio_q) < 15:
+            if len(self.audio_q) < qdepth:
                 continue
             else:
                 pred_q = self.audio_q.copy()
                 self.audio_q.clear()
-                print('Predicting Text.')
+                print('Transcribe Text Here.')
                 self.save(pred_q, f'{self.filepath}/test{str(i)}.wav')
                 i += 1
 
             # time.sleep(0.05)
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Testing running pyaudio to support streaming audio from laptop.")
+    parser = argparse.ArgumentParser(description="Testing running pyaudio to support streaming audio.")
     parser.add_argument('--filepath', '-p', type=str, default=None, required=True,
                         help='file location where we will save samples  file names are test<#>.wav where # \
                               is the number in a sequence of saved chunks from the sound card.')
     args = parser.parse_args()
-    sample_rate = 8000
-    # TODO: add Chunk and frame params
-
+    SAMPLE_DATATYPE = pyaudio.paInt16
+    SAMPLE_RATE = 8000
+    CHUNK_SIZE = 1024
+    QUEUE_DEPTH = 15
+    NCHANNELS = 1
+    window_size = CHUNK_SIZE * QUEUE_DEPTH / SAMPLE_RATE
+    print(f'Sample from audio card and save off data every {window_size}s')
 
     # remove old files following the pattern test<#>.wav
     #   ask the user before removing.
@@ -101,8 +115,11 @@ if __name__ == '__main__':
         if "test" in filename and 'wav' in filename:
             files.append(filename)
     files.sort()
+
+    # if some files are found that look like old ones, ask to remove them.
     if len(files) > 0:
-        rsp = input(f'The following files were found in {args.filepath}: {files}.  Would you like to remove them? [Y/n] ')
+        rsp = input(
+            f'The following files were found in {args.filepath}: {files}.  Would you like to remove them? [Y/n] ')
         if rsp.lower() == '' or rsp.lower() == 'y':
             for file in files:
                 print(f'Removing {file}.')
@@ -111,11 +128,9 @@ if __name__ == '__main__':
             print('Leaving program.  Remove files to run to completion.')
             exit()
 
-
     try:
-        asr_engine = SpeechRecognitionEngine(sample_rate, args.filepath)
-        print(f'Prediction Window is {1024 * 15 / sample_rate}s.')
-        asr_engine.run()
+        asr_engine = SpeechRecognitionEngine(SAMPLE_RATE, SAMPLE_DATATYPE, CHUNK_SIZE, NCHANNELS, args.filepath)
+        asr_engine.run(QUEUE_DEPTH)
         threading.Event().wait()
 
     except KeyboardInterrupt as e:
