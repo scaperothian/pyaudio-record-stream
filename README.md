@@ -15,3 +15,7 @@ python record_stream.py -f <filepath>
 ```
 python test_recorded_stream.py -f <filepath>
 ```
+
+## Requirements
+
+Tested with Python 3.10 and pyaudio.  See requirements.txt (this is mostly it!)
